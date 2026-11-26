@@ -15,6 +15,15 @@ Arabic and English, right-to-left ready, built for phones. No server, no account
 <img src="docs/screens/05-bag.png" width="23%" alt="Bag and WhatsApp checkout">
 </p>
 
+## Screenshots
+
+Captured from the live site (https://yousefkhames.github.io/brand/).
+
+<p>
+  <img src="docs/screenshots/live-desktop.png" alt="brand desktop view" width="640">
+  <img src="docs/screenshots/live-mobile.png" alt="brand mobile view" width="200">
+</p>
+
 ## The pitch
 
 Most small clothing brands in Egypt sell through Instagram DMs and WhatsApp. They do not need a full web shop, they need a clean page that shows the pieces, builds hype for a drop, and turns a tap into a ready-to-send WhatsApp order.
