@@ -61,20 +61,32 @@
   }
 
   function normalizePhone(num, countryCode) {
-    var d = String(num || '').replace(/[^\d]/g, '');
+    var value = String(num || '').trim().replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); })
+      .replace(/[۰-۹]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); });
+    if (!/^\+?[\d().\s-]+$/.test(value)) return '';
+    var d = value.replace(/\D/g, '');
     if (!d) return '';
-    if (d.indexOf('00') === 0) return d.slice(2);
     var cc = String(countryCode || '').replace(/\D/g, '');
-    if (d.charAt(0) === '0' && cc) return cc + d.slice(1);
-    return d;
+    if (d.indexOf('00') === 0) d = d.slice(2);
+    else if (!value.startsWith('+') && d.charAt(0) === '0' && cc) d = cc + d.slice(1);
+    return /^[1-9]\d{7,14}$/.test(d) ? d : '';
   }
 
   function waLink(number, countryCode, message) {
     var n = normalizePhone(number, countryCode);
-    return 'https://wa.me/' + n + '?text=' + encodeURIComponent(message);
+    return n ? 'https://wa.me/' + n + '?text=' + encodeURIComponent(message) : '';
   }
 
-  function lineKey(l) { return [l.pid, l.size || '', l.color || ''].join('|'); }
+  function shopPhone(state) {
+    var value = normalizePhone(state.brand.whatsapp, state.brand.countryCode);
+    return !state.demo && value !== '201000000000' ? value : '';
+  }
+
+  function lineKey(l) { return JSON.stringify([l.pid, l.size || '', l.color || '']); }
+  function validVariant(p, l) {
+    return (p.sizes.length ? p.sizes.includes(l.size) : !l.size) &&
+      (p.colors.length ? p.colors.some(function (c) { return c.name === l.color; }) : !l.color);
+  }
 
   function addToCart(cart, line) {
     var out = cart.map(function (l) { return Object.assign({}, l); });
@@ -106,7 +118,7 @@
       if (!p) return;
       res.push({ index: idx, product: p, size: l.size, color: l.color, qty: l.qty,
         unit: Number(p.price) || 0, total: (Number(p.price) || 0) * l.qty,
-        blocked: !!p.soldOut || isLocked(p, state, now) });
+        blocked: !!p.soldOut || isLocked(p, state, now) || !validVariant(p, l) });
     });
     return res;
   }
@@ -190,15 +202,16 @@
     var C = function (name, hex) { return { name: name, hex: hex }; };
     return {
       v: VERSION,
+      demo: true,
       brand: {
         name: { en: 'Shamsa', ar: 'شمسة' },
         tagline: { en: 'Sun-washed basics from Alexandria', ar: 'ملابس يومية بروح الإسكندرية' },
-        about: { en: 'Small-batch cotton pieces, cut and sewn locally. New drop every month.', ar: 'قطع قطن بكميات صغيرة، قص وخياطة محلية. إصدار جديد كل شهر.' },
+        about: { en: 'This sample lookbook illustrates how a shop can present a collection.', ar: 'كتالوج تجريبي يوضح طريقة عرض مجموعة ملابس.' },
         monogram: 'S',
         logoImage: '',
         colors: { bg: '#f3ece1', ink: '#1d1a17', accent: '#c4472b', accent2: '#2f4a43' },
         currency: { code: 'EGP', symbol: 'ج.م', position: 'after' },
-        whatsapp: '01000000000',
+        whatsapp: '',
         countryCode: '20',
         lang: 'ar',
         instagram: ''
@@ -207,7 +220,7 @@
         enabled: true,
         at: inDays(6, now),
         title: { en: 'Drop 04: Salt & Linen', ar: 'الإصدار ٠٤: ملح وكتان' },
-        blurb: { en: 'Four pieces. Once they are gone, they are gone.', ar: 'أربع قطع فقط. لما تخلص، خلصت.' }
+        blurb: { en: 'Sample launch countdown. No stock or availability is promised.', ar: 'عدّ تنازلي تجريبي. لا يعكس المخزون أو التوافر الفعلي.' }
       },
       products: [
         { id: 'p1', name: { en: 'Boxy Tee', ar: 'تيشيرت واسع' }, cat: 'tops', type: 'tee', price: 450, sizes: ['S', 'M', 'L', 'XL'], colors: [C('Sand', '#d9c6a5'), C('Ink', '#1d1a17')], drop: false, soldOut: false, img: '', desc: { en: '240gsm Egyptian cotton, drop shoulder.', ar: 'قطن مصري ٢٤٠ جرام، كتف نازل.' } },
@@ -240,6 +253,7 @@
     var cur = b.currency || {};
     var out = {
       v: VERSION,
+      demo: input.demo !== false,
       brand: {
         name: bi(b.name || base.brand.name, 40),
         tagline: bi(b.tagline || base.brand.tagline, 90),
@@ -281,7 +295,7 @@
         name: bi(p.name, 60),
         cat: CATS.indexOf(p.cat) >= 0 ? p.cat : 'tops',
         type: TYPES.indexOf(p.type) >= 0 ? p.type : 'tee',
-        price: isFinite(price) && price >= 0 ? price : 0,
+        price: isFinite(price) && price >= 0 && price <= 1_000_000 ? price : 0,
         sizes: (Array.isArray(p.sizes) ? p.sizes : []).map(function (s) { return clampStr(s, 10).trim(); }).filter(Boolean).slice(0, 12),
         colors: (Array.isArray(p.colors) ? p.colors : []).filter(function (c) { return c && isHex(c.hex); }).slice(0, 8).map(function (c) { return { name: clampStr(c.name, 20), hex: c.hex }; }),
         drop: !!p.drop,
@@ -291,7 +305,7 @@
       });
     });
     // unique ids
-    var seen = {};
+    var seen = Object.create(null);
     out.products.forEach(function (p) { if (seen[p.id]) p.id = uid('p'); seen[p.id] = 1; });
     if (Array.isArray(input.cart)) {
       input.cart.slice(0, 100).forEach(function (l) {
@@ -308,7 +322,7 @@
 
   /* Brand-kit only (no cart/orders), what you hand to a client. */
   function exportKit(state) {
-    return JSON.stringify({ kind: 'brand-kit', v: VERSION, brand: state.brand, drop: state.drop, products: state.products }, null, 2);
+    return JSON.stringify({ kind: 'brand-kit', v: VERSION, demo: state.demo, brand: state.brand, drop: state.drop, products: state.products }, null, 2);
   }
 
   function exportAll(state) {
@@ -318,29 +332,34 @@
   function parseImport(text, now) {
     var data;
     try { data = JSON.parse(text); } catch (e) { return { ok: false, error: 'json' }; }
-    if (!data || typeof data !== 'object' || !data.brand || !Array.isArray(data.products)) return { ok: false, error: 'shape' };
-    return { ok: true, state: sanitizeState(data, now) };
+    if (!data || typeof data !== 'object' || !data.brand || typeof data.brand !== 'object' || Array.isArray(data.brand) || !Array.isArray(data.products)) return { ok: false, error: 'shape' };
+    if (data.v !== undefined && data.v !== VERSION) return { ok: false, error: 'version' };
+    if (data.kind !== undefined && data.kind !== 'brand-kit' && data.kind !== 'brand-backup') return { ok: false, error: 'kind' };
+    return { ok: true, kind: data.kind || 'legacy', state: sanitizeState(data, now) };
   }
 
   function csvCell(v) {
     var x = String(v == null ? '' : v);
-    if (/^[=+\-@\t\r]/.test(x)) x = "'" + x; // block spreadsheet formula injection
+    if (/^[\t\r\n]|^\s*[=+\-@]/.test(x)) x = "'" + x; // block spreadsheet formula injection
     return /[",\n\r]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x;
   }
   function ordersToCsv(orders, currencyCode) {
     var rows = [['id', 'date', 'customer', 'pieces', 'total', 'currency', 'status']];
-    orders.forEach(function (o) { rows.push([o.id, o.at, o.name, o.count, o.total, currencyCode, o.status]); });
+    orders.forEach(function (o) { rows.push([o.id, o.at, o.name, o.count, o.total, currencyCode, o.status === 'sent' ? 'drafted' : o.status]); });
     return '\ufeff' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n');
   }
 
   function nextOrderId(orders) {
-    return 'B' + String(1000 + orders.length + 1);
+    return 'B' + (1 + orders.reduce(function (n, order) {
+      var match = /^B(\d{1,10})$/.exec(order.id);
+      return match ? Math.max(n, Number(match[1])) : n;
+    }, 1000));
   }
 
   return {
     VERSION: VERSION, STORAGE_KEY: STORAGE_KEY, CATS: CATS, TYPES: TYPES,
     uid: uid, esc: esc, toArabicDigits: toArabicDigits, formatNumber: formatNumber, formatPrice: formatPrice,
-    countdown: countdown, dropIsLive: dropIsLive, isLocked: isLocked, normalizePhone: normalizePhone, waLink: waLink,
+    countdown: countdown, dropIsLive: dropIsLive, isLocked: isLocked, shopPhone: shopPhone, normalizePhone: normalizePhone, waLink: waLink,
     addToCart: addToCart, setQty: setQty, findProduct: findProduct, cartLines: cartLines, cartTotal: cartTotal, cartCount: cartCount,
     tr: tr, buildOrderMessage: buildOrderMessage, validateCustomer: validateCustomer,
     isHex: isHex, contrast: contrast, onColor: onColor, inDays: inDays,

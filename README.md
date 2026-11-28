@@ -1,82 +1,38 @@
-<p align="center"><img src="docs/logo.svg" width="96" alt="Brand logo"></p>
+# Brand · كتالوج الملابس
 
-<h1 align="center">Brand</h1>
+A static, white-label lookbook for clothing shops: bilingual product cards, size and colour selection, a release countdown, a bag and a WhatsApp draft. Arabic RTL and English LTR; no runtime dependencies, no hosting account needed to preview, and no payment gateway.
 
-<p align="center"><strong>A white-label page for a small clothing brand: lookbook, drop countdown, and orders that arrive on WhatsApp.</strong><br>
-Arabic and English, right-to-left ready, built for phones. No server, no account, no cost.</p>
+<div lang="ar" dir="rtl">كتالوج للملابس بالعربية والإنجليزية. جهّز حقيبة الطلب ثم افتح مسودة في واتساب. يتم إرسال الرسالة يدويًا، وتأكيد الطلب عند رد المتجر.</div>
 
-<p align="center"><a href="https://yousefkhames.github.io/brand/"><b>Open the live demo</b></a> ·
-<a href="https://yousefkhames.github.io/brand/#/settings">Try the settings screen</a></p>
+<img src="assets/yk-logo.svg" width="24" height="24" alt=""> **By Yousef Khames · من تطوير يوسف خميس**
 
-<p align="center">
-<img src="docs/screens/01-lookbook-ar.png" width="23%" alt="Lookbook in Arabic">
-<img src="docs/screens/04-drop.png" width="23%" alt="Drop page with countdown">
-<img src="docs/screens/03-product.png" width="23%" alt="Product sheet">
-<img src="docs/screens/05-bag.png" width="23%" alt="Bag and WhatsApp checkout">
-</p>
+## Preview and test
 
-## Screenshots
-
-Captured from the live site (https://yousefkhames.github.io/brand/).
-
-<p>
-  <img src="docs/screenshots/live-desktop.png" alt="brand desktop view" width="640">
-  <img src="docs/screenshots/live-mobile.png" alt="brand mobile view" width="200">
-</p>
-
-## The pitch
-
-Most small clothing brands in Egypt sell through Instagram DMs and WhatsApp. They do not need a full web shop, they need a clean page that shows the pieces, builds hype for a drop, and turns a tap into a ready-to-send WhatsApp order.
-
-Brand is that page. Change the name, logo, colours, currency, language and products in a settings screen, export the result as a file, and you have a branded storefront for the next client.
-
-## Features
-
-- **Lookbook.** Editorial grid, category filters, a product sheet with size, colour and quantity.
-- **Drop page.** Live countdown to a date you set. Drop-only pieces stay locked (blurred, not orderable) until the timer ends, then open up on their own.
-- **WhatsApp ordering.** The bag builds a full order message (items, options, total, customer details, order number) and opens `wa.me` with the shop's number. Validation, phone normalisation (`010...` becomes `2010...`), and a copy-message fallback.
-- **Order log.** Orders sent from the device are listed with a status you can change, and exported as CSV.
-- **Share a piece.** One tap shares a product and the page link on WhatsApp.
-- **Settings for white-labelling.** Brand name and tagline in both languages, letter logo or uploaded logo, four colours with five ready palettes and a contrast warning, currency code, symbol and position, shop WhatsApp number, country code, default language, Instagram handle, the drop (title, blurb, date), and a full product editor (add, edit, delete, photo upload, sold out, drop flag).
-- **Export and import.** Brand kit (branding, drop, products, no customer data) or full backup as JSON. Import is validated and sanitised.
-- **Arabic and English.** Full translation, real RTL layout, Arabic-Indic digits and separators in Arabic mode.
-- **Offline-capable.** A small service worker caches the app after the first visit.
-- **Accessible basics.** Keyboard operation, focus trap and focus return in dialogs, Escape to close, visible focus, reduced-motion support, skip link.
-
-## Tech
-
-Plain HTML, CSS and JavaScript, no build step and no dependencies.
-
-| File | Role |
-| --- | --- |
-| `js/lib.js` | Pure logic: countdown, drop locking, cart, totals, order message, phone and price formatting, import sanitising, CSV |
-| `js/art.js` | Original SVG garment drawings and the generated logo |
-| `js/i18n.js` | Arabic and English strings |
-| `js/app.js` | Views, events, settings, localStorage |
-| `sw.js` | Offline cache |
-
-Data lives in `localStorage` (`brand.v1`). Nothing is sent anywhere. The only network action is opening a WhatsApp link when you press order.
-
-## Run and test
-
-```bash
-python3 -m http.server 8080      # or any static server
-npm test                          # 13 unit tests (node:test), no packages needed
-node tests/e2e.mjs http://localhost:8080/   # real Chrome click-through, needs google-chrome
+```sh
+python3 -m http.server 8099 --bind 127.0.0.1
+npm test
+node tests/e2e.mjs http://127.0.0.1:8099/
 ```
 
-The end-to-end script drives a real headless Chrome over the DevTools protocol: language switch, filters, product sheet, drop locking and ticking countdown, validation, the exact `wa.me` link and message, order log, white-label settings, adding a product, changing the drop date, export and import, Arabic editor, and a check for JavaScript errors. It also runs against the live GitHub Pages URL.
+Open `http://127.0.0.1:8099/` from the repository root. Unit tests run on Node 22+ without an npm install. The browser suite expects `google-chrome` on `PATH`. It intercepts the checkout link in the browser; no message or order is sent. The app shell works offline after the first successful visit over localhost or HTTPS. The WhatsApp hand-off requires a connection.
+
+**Screenshot placeholder:** Add screenshots of the Arabic lookbook and English settings view from this version, with synthetic catalog items only. Prior screenshots may still be present under `docs/`.
+
+## Rebrand for a shop
+
+1. In **Settings → Brand**, set Arabic and English names, about copy, a logo or monogram and colours. Configure the catalog, currency and drop. The sample catalog shows fictional items and sample prices; replace them before taking orders.
+2. Enter the public shop WhatsApp number in international format or give a local number and country code. Leave **Demo catalog** on until the catalog, prices and destination are ready. Turn it off when you are ready to test the real store flow. Old files with no explicit choice default to demo; a legacy factory placeholder stays blocked even with demo off.
+3. Export a **brand kit** (branding, demo flag, drop and products only). A **full backup** additionally contains the local cart and order log; store it privately. Importing a brand kit resets the cart and retains local orders. A full backup replaces both after confirmation when local orders or a cart exist. Older unlabelled imports are treated as backups. Export before any destructive action.
+4. For static rebranding, edit `assets/kit-theme.js` (`name`, optional `logo`, `accent`, `mode`, `light` and `dark`) and load the kit in a fresh browser profile. `index.html` loads the script before app code and the service worker caches it. Use a local relative asset for `logo`; uploaded images override it, and the logo credit remains separate. Settings changed locally do **not** become public. For public visitors to see a custom product list, a maintainer must replace catalog defaults in `js/lib.js`; importing to a seller device only changes that device. No publishing is part of this change.
 
 ## Honest limits
 
-- It is a front end only. There is no payments, stock sync, accounts or admin login. Anyone who opens the page can open its Settings screen, and their changes stay in their own browser.
-- Because data is per-browser, a shop owner edits on one device and exports the kit; to publish changes to customers you replace the default content in `js/lib.js` (or ship the exported kit) and redeploy. Brand does not push edits to other visitors.
-- Orders are only as reliable as WhatsApp: the app opens a pre-filled chat, the customer still has to press send. The order log records what was prepared on that device, not what was received.
-- Clearing browser data erases the log and edits. Export a backup.
-- Product images are drawn silhouettes unless you upload photos. Uploaded photos are shrunk and stored in `localStorage`, which is limited (about 5 MB), so keep them few.
-- Prices are plain numbers in one currency. No tax, shipping, discounts or variants with their own stock.
-- Tested in headless Chrome and by reading the layout at phone and desktop widths. Not tested on Safari or Firefox.
+- Free static hosting and device-local data: no stock synchronisation, staff accounts, automatic sending, tax or shipping calculation, or checkout payment integration. A paid/delivered status is an owner annotation, not a provider event.
+- The order log records a prepared message, not proof of a WhatsApp send, receipt, payment, or delivery. Stale variants must be removed before preparing a draft. The countdown uses the device clock.
+- Checkout contact details are not saved as a reusable browser profile by this revision. The local order log still retains the entered name and a summary; exports can contain that information. Use a shop device, clear or back up the log intentionally, and do not share backup files publicly.
+- Invalid or explicitly unsupported stored state is left untouched until you reset it on purpose. The UI can temporarily load sample defaults. Clearing browser site data erases local edits.
+- The design includes checked palette pairs, keyboard focus and RTL tests; it has not been certified against every WCAG requirement or tested on real mobile hardware in this review.
 
-## Licence
+## License
 
-MIT, see [LICENSE](LICENSE).
+MIT, copyright Yousef Khames. See `LICENSE`.

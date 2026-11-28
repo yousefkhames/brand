@@ -156,3 +156,16 @@ html[dir=rtl] .btn:hover:not(:disabled){transform:translate(2px,-2px);box-shadow
 
 .grid{grid-auto-flow:dense}
 @media (min-width:760px){.ticker{margin:0}}
+
+/* YK storefront layer — relative to writing direction and theme. */
+:root { --yk-step: .5rem; }
+.yk-credit { display: inline-flex; align-items: center; gap: var(--yk-step); font-size: .875rem; }
+.yk-credit img { inline-size: 24px; block-size: 24px; display: block; flex: none; }
+.about .yk-credit { margin-block-start: 1rem; }
+.yk-notice { margin-block: 1rem; padding: .75rem 1rem; border: 1px solid var(--ink); border-inline-start-width: .3rem; }
+.yk-visually-hidden { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.art { background: color-mix(in srgb, var(--bg) 92%, var(--ink)); }
+.kicker, .warn { color: var(--ink); }
+:focus-visible, label.btn:focus-within { outline: 2px solid var(--ink); outline-offset: 3px; box-shadow: 0 0 0 3px var(--bg); }
+.tabbar a, .line.blocked { opacity: 1; }
+.langbtn, .chip, .opt, .qty button { min-block-size: 44px; }

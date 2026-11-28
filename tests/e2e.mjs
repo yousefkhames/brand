@@ -110,12 +110,18 @@ try {
   await setVal('input[name=name]', 'Sara Ali'); await setVal('input[name=phone]', '01112223344'); await setVal('input[name=address]', '12 Smouha St, Alexandria'); await setVal('input[name=notes]', 'Call before');
   await shot('05-bag');
   await click('#checkout button[type=submit]');
+  ok(await ev('window.__opened.length') === 0, 'demo catalog never opens a merchant WhatsApp link');
+  await go('#/settings');
+  await setVal('[data-set="brand.whatsapp"]', '+12025550100');
+  await click('[data-set=demo]');
+  await go('#/bag');
+  await click('#checkout button[type=submit]');
   const link = await ev(`window.__opened[0]`);
-  ok(link && link.startsWith('https://wa.me/201000000000?text='), 'opens wa.me link with normalised shop number');
+  ok(link && link.startsWith('https://wa.me/12025550100?text='), 'opens wa.me link with normalised shop number');
   const msg = decodeURIComponent(link.split('text=')[1]);
   ok(/2 x Boxy Tee \(L, Ink\)/.test(msg) && /Total: 900/.test(msg) && /Sara Ali/.test(msg) && /Call before/.test(msg), 'message has item, total, customer');
   ok(await ev(`JSON.parse(localStorage.getItem('brand.v1')).cart.length`) === 0, 'cart cleared after order');
-  ok((await ev(`document.querySelector('.done a.wa').href`)).startsWith('https://wa.me/201000000000'), 'confirmation page keeps a re-open WhatsApp link');
+  ok((await ev(`document.querySelector('.done a.wa').href`)).startsWith('https://wa.me/12025550100'), 'confirmation page keeps a re-open WhatsApp link');
   await go('#/orders');
   ok((await ev(`document.querySelector('.olist').textContent`)).includes('B1001'), 'order logged as B1001');
   await setVal('.olist select', 'paid', 'change');
@@ -181,6 +187,21 @@ try {
   await shot('07-editor-ar');
   await ev(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))`);
   ok(await ev(`document.querySelector('#editor').hidden`), 'Escape closes the editor');
+  await go('#/');
+  ok(await ev(`document.querySelector('.about .yk-credit').textContent === 'من تطوير يوسف خميس'`), 'Arabic about credit');
+  await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }] });
+  await until(`getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() === '#111827'`, 'system dark theme');
+  await ev('navigator.serviceWorker.ready.then(()=>true)');
+  await until('navigator.serviceWorker.controller', 'worker controlling the app');
+  await send('Network.enable');
+  await send('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });
+  try {
+    await send('Page.reload');
+    await until(`document.querySelector('footer .yk-credit img')?.naturalWidth`, 'author mark available offline');
+    ok(await ev(`typeof KitTheme.palette`) === 'function', 'theme loads offline');
+  } finally {
+    await send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+  }
   ok(errors.length === 0, 'no JS errors (' + errors.join(' | ') + ')');
   console.log(`\nE2E PASS: ${passed} checks`);
 } catch (e) {
