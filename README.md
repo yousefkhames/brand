@@ -1,3 +1,21 @@
+<div align="center">
+
+<img src="assets/yk-logo.svg" width="64" alt="YK">
+
+# brand
+
+**Brand** · demo / portfolio project
+
+**صفحة براند ملابس محلي** · مشروع تجريبي للعرض
+
+[Live demo](https://yousefkhames.github.io/brand/) · By Yousef Khames · من تطوير يوسف خميس
+
+<img src="assets/og.png" width="640" alt="brand preview">
+
+</div>
+
+---
+
 # Brand · كتالوج الملابس
 
 A static, white-label lookbook for clothing shops: bilingual product cards, size and colour selection, a release countdown, a bag and a WhatsApp draft. Arabic RTL and English LTR; no runtime dependencies, no hosting account needed to preview, and no payment gateway.
